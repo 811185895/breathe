@@ -1,0 +1,40 @@
+<Window x:Class="BreatheWidget.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Breathe Widget"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Focusable="False"
+        IsHitTestVisible="False">
+    <Canvas x:Name="RootCanvas"
+            Background="Transparent"
+            IsHitTestVisible="False">
+        <Ellipse x:Name="BreathHalo"
+                 Width="180"
+                 Height="180"
+                 Canvas.Left="0"
+                 Canvas.Top="0"
+                 RenderTransformOrigin="0.5,0.5">
+            <Ellipse.RenderTransform>
+                <ScaleTransform x:Name="HaloScale" ScaleX="1" ScaleY="1" />
+            </Ellipse.RenderTransform>
+            <Ellipse.Fill>
+                <RadialGradientBrush x:Name="HaloBrush">
+                    <GradientStop x:Name="HaloCoreStop" Color="#D2E2ECF8" Offset="0.0" />
+                    <GradientStop x:Name="HaloMidStop" Color="#6CB4CCEE" Offset="0.42" />
+                    <GradientStop x:Name="HaloEdgeStop" Color="#08D2E2F8" Offset="1.0" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+        <Ellipse x:Name="BreathDot"
+                 Width="22"
+                 Height="22"
+                 Fill="#E2ECF8"
+                 Opacity="0.35" />
+    </Canvas>
+</Window>
