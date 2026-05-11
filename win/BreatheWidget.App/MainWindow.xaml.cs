@@ -28,6 +28,7 @@ public partial class MainWindow : Window, IDisposable
     private BreathProfile _activeProfile = BreathProfile.Default;
     private BreathSampler _sampler = new(BreathProfile.Default);
     private ScreenAnchor _anchor = ScreenAnchor.GoldenLower;
+    private AmbientToneMode _toneMode = AmbientToneMode.DawnGlow;
     private WorkState _currentState = WorkState.Light;
     private DateTimeOffset? _enteredDeepFocusAt;
     private bool _useSubtleMode;
@@ -122,7 +123,7 @@ public partial class MainWindow : Window, IDisposable
             _screenSampler.Sample(center.X, center.Y - offsetY),
             _screenSampler.Sample(center.X, center.Y + offsetY));
 
-        _tone = _toneSelector.Select(sample);
+        _tone = _toneSelector.Select(sample, _toneMode);
         ApplyTone(_tone);
     }
 
@@ -142,6 +143,12 @@ public partial class MainWindow : Window, IDisposable
     {
         _anchor = anchor;
         PositionBreathVisual();
+        HandleAmbientTick(this, EventArgs.Empty);
+    }
+
+    public void UseToneMode(AmbientToneMode mode)
+    {
+        _toneMode = mode;
         HandleAmbientTick(this, EventArgs.Empty);
     }
 
@@ -205,9 +212,9 @@ public partial class MainWindow : Window, IDisposable
 
         var animation = new DoubleAnimationUsingKeyFrames();
         animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.82, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(1.4))));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.82, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(9))));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(11))));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.94, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(2.6))));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.94, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(20))));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(25))));
 
         GentlePromptText.BeginAnimation(OpacityProperty, animation);
     }

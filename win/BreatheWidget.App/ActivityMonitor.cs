@@ -8,6 +8,7 @@ namespace BreatheWidget.App;
 internal sealed class ActivityMonitor : IDisposable
 {
     private static readonly TimeSpan ActivityWindow = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan InactiveBreak = TimeSpan.FromMinutes(3);
 
     private readonly object _keyboardLock = new();
     private readonly Queue<DateTimeOffset> _keyboardInputs = new();
@@ -35,6 +36,21 @@ internal sealed class ActivityMonitor : IDisposable
 
         try
         {
+            var idleDuration = ReadIdleDuration();
+            if (idleDuration >= InactiveBreak)
+            {
+                ResetSession();
+                return new ActivitySnapshot(
+                    Window: WindowActivitySnapshot.Unknown,
+                    WindowDwell: TimeSpan.Zero,
+                    KeyboardInputs: 0,
+                    MouseTravel: 0,
+                    WindowSwitches: 0,
+                    IdleDuration: idleDuration,
+                    SampleDuration: TimeSpan.Zero,
+                    IsAvailable: true);
+            }
+
             var window = ReadForegroundWindow();
             if (_currentWindow is null || _currentWindow.Identity != window.Identity)
             {
@@ -61,7 +77,7 @@ internal sealed class ActivityMonitor : IDisposable
                 KeyboardInputs: keyboardInputs,
                 MouseTravel: _mouseTravel.Sum(sample => sample.Distance),
                 WindowSwitches: Math.Max(0, _windowSwitches.Count - 1),
-                IdleDuration: ReadIdleDuration(),
+                IdleDuration: idleDuration,
                 SampleDuration: sampleDuration,
                 IsAvailable: true);
         }
@@ -141,6 +157,20 @@ internal sealed class ActivityMonitor : IDisposable
         while (_mouseTravel.TryPeek(out var mouseAt) && mouseAt.At < oldest)
         {
             _mouseTravel.Dequeue();
+        }
+    }
+
+    private void ResetSession()
+    {
+        _currentWindow = null;
+        _windowStartedAt = null;
+        _lastCursor = null;
+        _windowSwitches.Clear();
+        _mouseTravel.Clear();
+
+        lock (_keyboardLock)
+        {
+            _keyboardInputs.Clear();
         }
     }
 

@@ -24,6 +24,9 @@ public partial class App : System.Windows.Application
         _trayController = new TrayController(
             () => Broadcast(w => w.UseVisibleMode()),
             () => Broadcast(w => w.UseSubtleMode()),
+            () => Broadcast(w => w.UseToneMode(AmbientToneMode.DawnGlow)),
+            () => Broadcast(w => w.UseToneMode(AmbientToneMode.ClassicAdaptive)),
+            () => Broadcast(w => w.UseToneMode(AmbientToneMode.Moonlight)),
             () => Broadcast(w => w.UseAnchor(ScreenAnchor.Center)),
             () => Broadcast(w => w.UseAnchor(ScreenAnchor.LowerThird)),
             () => Broadcast(w => w.UseAnchor(ScreenAnchor.GoldenLower)),

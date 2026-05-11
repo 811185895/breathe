@@ -5,14 +5,18 @@ var tests = new (string Name, Action Run)[]
     ("Default profile is visible enough to confirm startup", DefaultProfileIsVisibleEnoughToConfirmStartup),
     ("Breath sample reaches inhale peak halfway through cycle", BreathSampleReachesPeakHalfway),
     ("State mapper strengthens visual after long focus", StateMapperStrengthensAfterLongFocus),
-    ("Adaptive tone uses moonlight on dark backgrounds", AdaptiveToneUsesMoonlightOnDarkBackgrounds),
-    ("Adaptive tone uses cool fog on bright backgrounds", AdaptiveToneUsesCoolFogOnBrightBackgrounds),
+    ("Adaptive tone uses classic glow on dark backgrounds", AdaptiveToneUsesClassicGlowOnDarkBackgrounds),
+    ("Adaptive tone uses dawn glow on bright backgrounds", AdaptiveToneUsesDawnGlowOnBrightBackgrounds),
+    ("Adaptive tone preserves classic neutral mode", AdaptiveTonePreservesClassicNeutralMode),
+    ("Adaptive tone preserves manual moonlight mode", AdaptiveTonePreservesManualMoonlightMode),
     ("Adaptive tone follows colorful backgrounds with low saturation", AdaptiveToneFollowsColorfulBackgroundsWithLowSaturation),
     ("Adaptive tone stays visible on white backgrounds", AdaptiveToneStaysVisibleOnWhiteBackgrounds),
     ("Screen anchor resolves golden lower point", ScreenAnchorResolvesGoldenLowerPoint),
-    ("Evaluator keeps short dwell in light state", EvaluatorKeepsShortDwellLight),
-    ("Evaluator promotes sustained activity to focused state", EvaluatorPromotesSustainedActivityToFocused),
-    ("Evaluator promotes long low-switch work to deep focus", EvaluatorPromotesLongLowSwitchWorkToDeepFocus),
+    ("Evaluator treats high keyboard output as light state", EvaluatorTreatsHighKeyboardOutputAsLight),
+    ("Evaluator promotes low-output same-window dwell to focused state", EvaluatorPromotesLowOutputDwellToFocused),
+    ("Evaluator promotes long low-output dwell to deep focus", EvaluatorPromotesLongLowOutputDwellToDeepFocus),
+    ("Evaluator promotes frequent switching without output to deep focus", EvaluatorPromotesSwitchingWithoutOutputToDeepFocus),
+    ("Evaluator treats inactivity as session break", EvaluatorTreatsInactivityAsSessionBreak),
     ("Prompt policy waits for sustained deep focus", PromptPolicyWaitsForSustainedDeepFocus),
     ("Prompt policy suppresses repeated prompt during cooldown", PromptPolicySuppressesRepeatedPromptDuringCooldown)
 };
@@ -76,26 +80,50 @@ static void StateMapperStrengthensAfterLongFocus()
     AssertTrue(deep.MaxScale >= light.MaxScale, "deep focus should not shrink the visual peak");
 }
 
-static void AdaptiveToneUsesMoonlightOnDarkBackgrounds()
+static void AdaptiveToneUsesClassicGlowOnDarkBackgrounds()
 {
     var selector = new AmbientToneSelector();
 
     var tone = selector.Select(new AmbientColorSample(18, 22, 28));
 
-    AssertTrue(tone.Kind == AmbientToneKind.Moonlight, "dark backgrounds should use moonlight tone");
-    AssertTrue(tone.Core.R >= 210 && tone.Core.G >= 220 && tone.Core.B >= 230, "moonlight core should be soft white-blue");
+    AssertTrue(tone.Kind == AmbientToneKind.Moonlight, "dark backgrounds should use the original white-gray glow");
+    AssertTrue(tone.Core.R >= 210 && tone.Core.G >= 220 && tone.Core.B >= 230, "dark backgrounds should stay in the original white-gray range");
     AssertTrue(tone.MaxOpacity >= 0.26, "dark backgrounds need enough visible glow");
 }
 
-static void AdaptiveToneUsesCoolFogOnBrightBackgrounds()
+static void AdaptiveToneUsesDawnGlowOnBrightBackgrounds()
 {
     var selector = new AmbientToneSelector();
 
     var tone = selector.Select(new AmbientColorSample(242, 240, 236));
 
-    AssertTrue(tone.Kind == AmbientToneKind.CoolFog, "bright backgrounds should use cool fog tone");
-    AssertTrue(tone.Core.R < 170 && tone.Core.G < 180 && tone.Core.B < 200, "cool fog core should avoid pure black and pure white");
+    AssertTrue(tone.Kind == AmbientToneKind.DawnGlow, "bright backgrounds should use dawn glow tone");
+    AssertTrue(tone.Core.R > tone.Core.G && tone.Core.G > tone.Core.B, "dawn glow should lean warm gold");
+    AssertTrue(tone.Core.G >= 170 && tone.Core.B >= 110, "dawn glow should stay soft instead of harsh yellow");
     AssertTrue(tone.Edge.A <= 30, "edge should remain atmospheric instead of a hard object");
+}
+
+static void AdaptiveTonePreservesClassicNeutralMode()
+{
+    var selector = new AmbientToneSelector();
+
+    var darkTone = selector.Select(new AmbientColorSample(18, 22, 28), AmbientToneMode.ClassicAdaptive);
+    var brightTone = selector.Select(new AmbientColorSample(242, 240, 236), AmbientToneMode.ClassicAdaptive);
+
+    AssertTrue(darkTone.Kind == AmbientToneKind.Moonlight, "classic mode should preserve the early dark-background white glow");
+    AssertTrue(darkTone.Core.R >= 210 && darkTone.Core.G >= 220 && darkTone.Core.B >= 230, "classic dark tone should remain soft white-blue");
+    AssertTrue(brightTone.Kind == AmbientToneKind.CoolFog, "classic mode should preserve the early bright-background gray fog");
+    AssertTrue(brightTone.Core.R <= 115 && brightTone.Core.G <= 130 && brightTone.Core.B <= 150, "classic bright tone should remain cool gray");
+}
+
+static void AdaptiveTonePreservesManualMoonlightMode()
+{
+    var selector = new AmbientToneSelector();
+
+    var tone = selector.Select(new AmbientColorSample(252, 252, 252), AmbientToneMode.Moonlight);
+
+    AssertTrue(tone.Kind == AmbientToneKind.Moonlight, "manual moonlight mode should be selectable");
+    AssertTrue(tone.Core.R >= 210 && tone.Core.G >= 220 && tone.Core.B >= 230, "manual moonlight should use the original soft white-blue configuration");
 }
 
 static void AdaptiveToneFollowsColorfulBackgroundsWithLowSaturation()
@@ -115,9 +143,9 @@ static void AdaptiveToneStaysVisibleOnWhiteBackgrounds()
 
     var tone = selector.Select(new AmbientColorSample(252, 252, 252));
 
-    AssertTrue(tone.Kind == AmbientToneKind.CoolFog, "white backgrounds should use cool fog tone");
-    AssertTrue(tone.Core.R <= 115 && tone.Core.G <= 130 && tone.Core.B <= 150, "white backgrounds need a darker fog core");
-    AssertTrue(tone.MaxOpacity >= 0.46, "white backgrounds need stronger peak opacity");
+    AssertTrue(tone.Kind == AmbientToneKind.DawnGlow, "white backgrounds should use dawn glow tone");
+    AssertTrue(tone.Core.R >= 220 && tone.Core.G >= 180 && tone.Core.B >= 120, "white backgrounds need a visible warm dawn core");
+    AssertTrue(tone.MaxOpacity >= 0.38, "white backgrounds need enough warm glow to remain visible");
     AssertTrue(tone.Edge.A >= 20, "white backgrounds need a visible atmospheric edge");
 }
 
@@ -129,46 +157,77 @@ static void ScreenAnchorResolvesGoldenLowerPoint()
     AssertClose(668, anchor.Y, 1.0, "golden lower y");
 }
 
-static void EvaluatorKeepsShortDwellLight()
+static void EvaluatorTreatsHighKeyboardOutputAsLight()
 {
     var evaluator = new WorkStateEvaluator();
     var snapshot = CreateSnapshot(
-        dwell: TimeSpan.FromMinutes(12),
-        keyboardInputs: 180,
+        dwell: TimeSpan.FromMinutes(18),
+        keyboardInputs: 320,
         mouseTravel: 900,
         windowSwitches: 0);
 
     var state = evaluator.Evaluate(snapshot);
 
-    AssertEqual(WorkState.Light, state, "short dwell should stay light");
+    AssertEqual(WorkState.Light, state, "high keyboard output should reduce reminder intensity");
 }
 
-static void EvaluatorPromotesSustainedActivityToFocused()
+static void EvaluatorPromotesLowOutputDwellToFocused()
 {
     var evaluator = new WorkStateEvaluator();
     var snapshot = CreateSnapshot(
-        dwell: TimeSpan.FromMinutes(28),
-        keyboardInputs: 260,
-        mouseTravel: 1200,
-        windowSwitches: 1);
-
-    var state = evaluator.Evaluate(snapshot);
-
-    AssertEqual(WorkState.Focused, state, "sustained dwell with input should be focused");
-}
-
-static void EvaluatorPromotesLongLowSwitchWorkToDeepFocus()
-{
-    var evaluator = new WorkStateEvaluator();
-    var snapshot = CreateSnapshot(
-        dwell: TimeSpan.FromMinutes(52),
-        keyboardInputs: 520,
-        mouseTravel: 180,
+        dwell: TimeSpan.FromMinutes(8),
+        keyboardInputs: 8,
+        mouseTravel: 420,
         windowSwitches: 0);
 
     var state = evaluator.Evaluate(snapshot);
 
-    AssertEqual(WorkState.DeepFocus, state, "long low-switch work should be deep focus");
+    AssertEqual(WorkState.Focused, state, "same-window dwell with low output should be focused");
+}
+
+static void EvaluatorPromotesLongLowOutputDwellToDeepFocus()
+{
+    var evaluator = new WorkStateEvaluator();
+    var snapshot = CreateSnapshot(
+        dwell: TimeSpan.FromMinutes(16),
+        keyboardInputs: 4,
+        mouseTravel: 240,
+        windowSwitches: 0);
+
+    var state = evaluator.Evaluate(snapshot);
+
+    AssertEqual(WorkState.DeepFocus, state, "long same-window dwell without output should be deep focus");
+}
+
+static void EvaluatorPromotesSwitchingWithoutOutputToDeepFocus()
+{
+    var evaluator = new WorkStateEvaluator();
+    var snapshot = CreateSnapshot(
+        dwell: TimeSpan.FromMinutes(2),
+        keyboardInputs: 0,
+        mouseTravel: 1800,
+        windowSwitches: 6);
+
+    var state = evaluator.Evaluate(snapshot);
+
+    AssertEqual(WorkState.DeepFocus, state, "frequent switching without output should be deep focus");
+}
+
+static void EvaluatorTreatsInactivityAsSessionBreak()
+{
+    var evaluator = new WorkStateEvaluator();
+    var snapshot = CreateSnapshot(
+        dwell: TimeSpan.FromMinutes(40),
+        keyboardInputs: 0,
+        mouseTravel: 0,
+        windowSwitches: 0) with
+    {
+        IdleDuration = TimeSpan.FromMinutes(8)
+    };
+
+    var state = evaluator.Evaluate(snapshot);
+
+    AssertEqual(WorkState.Light, state, "inactivity should break the focus session");
 }
 
 static void PromptPolicyWaitsForSustainedDeepFocus()

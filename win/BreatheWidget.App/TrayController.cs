@@ -9,6 +9,9 @@ internal sealed class TrayController : IDisposable
     public TrayController(
         Action visibleMode,
         Action subtleMode,
+        Action dawnGlowTone,
+        Action classicAdaptiveTone,
+        Action moonlightTone,
         Action centerPosition,
         Action lowerThirdPosition,
         Action goldenPosition,
@@ -17,6 +20,10 @@ internal sealed class TrayController : IDisposable
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Visible", null, (_, _) => visibleMode());
         menu.Items.Add("Subtle", null, (_, _) => subtleMode());
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Items.Add("Tone: Dawn Glow", null, (_, _) => dawnGlowTone());
+        menu.Items.Add("Tone: Classic Neutral", null, (_, _) => classicAdaptiveTone());
+        menu.Items.Add("Tone: Moonlight", null, (_, _) => moonlightTone());
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Position: Center", null, (_, _) => centerPosition());
         menu.Items.Add("Position: Lower Third", null, (_, _) => lowerThirdPosition());

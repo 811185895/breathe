@@ -7,9 +7,10 @@ Windows ambient breathing reminder MVP.
 - Creates a transparent, always-on-top WPF overlay.
 - Uses Win32 extended window styles for click-through and no-activate behavior.
 - Renders an adaptive breathing atmosphere at the screen golden-lower point by default.
-- Samples the nearby background and shifts between moonlight, cool fog, and low-saturation tinted fog.
-- Uses a stronger cool-fog tone on white backgrounds so the atmosphere remains visible.
-- Provides a tray icon with `Visible`, `Subtle`, position, and `Exit` menu items.
+- Samples the nearby background and shifts between dawn glow and low-saturation tinted fog by default.
+- Uses the same warm dawn-glow tone on very dark and very bright backgrounds so the atmosphere feels alive and remains visible.
+- Keeps optional tray tone modes for `Classic Neutral` and `Moonlight`.
+- Provides a tray icon with `Visible`, `Subtle`, tone, position, and `Exit` menu items.
 
 ## Run
 

@@ -42,8 +42,15 @@
                    TextAlignment="Center"
                    TextWrapping="Wrap"
                    FontSize="18"
-                   FontWeight="Light"
-                   Foreground="#DDECF7"
-                   IsHitTestVisible="False" />
+                   FontWeight="Normal"
+                   Foreground="#FFF4D6"
+                   IsHitTestVisible="False">
+            <TextBlock.Effect>
+                <DropShadowEffect Color="#2A2016"
+                                  BlurRadius="12"
+                                  ShadowDepth="0"
+                                  Opacity="0.72" />
+            </TextBlock.Effect>
+        </TextBlock>
     </Canvas>
 </Window>

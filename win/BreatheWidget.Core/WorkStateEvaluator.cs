@@ -2,8 +2,8 @@ namespace BreatheWidget.Core;
 
 public sealed class WorkStateEvaluator
 {
-    private static readonly TimeSpan FocusedDwell = TimeSpan.FromMinutes(20);
-    private static readonly TimeSpan DeepFocusDwell = TimeSpan.FromMinutes(45);
+    private static readonly TimeSpan FocusedDwell = TimeSpan.FromMinutes(7.5);
+    private static readonly TimeSpan DeepFocusDwell = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan InactiveBreak = TimeSpan.FromMinutes(3);
 
     public WorkState Evaluate(ActivitySnapshot snapshot)
@@ -13,25 +13,27 @@ public sealed class WorkStateEvaluator
             return WorkState.Light;
         }
 
+        if (HasStrongKeyboardOutput(snapshot))
+        {
+            return WorkState.Light;
+        }
+
+        if (IsSwitchingWithoutOutput(snapshot))
+        {
+            return WorkState.DeepFocus;
+        }
+
         if (snapshot.WindowDwell < FocusedDwell)
         {
             return WorkState.Light;
         }
 
-        if (snapshot.WindowSwitches >= 3)
-        {
-            return WorkState.Light;
-        }
-
-        if (snapshot.WindowDwell >= DeepFocusDwell &&
-            snapshot.WindowSwitches == 0 &&
-            IsSustainedKeyboardActivity(snapshot) &&
-            IsLowMouseTravel(snapshot))
+        if (snapshot.WindowDwell >= DeepFocusDwell && HasLowKeyboardOutput(snapshot))
         {
             return WorkState.DeepFocus;
         }
 
-        if (IsSustainedKeyboardActivity(snapshot) || snapshot.MouseTravel >= 300)
+        if (HasLowKeyboardOutput(snapshot) && HasMouseActivity(snapshot))
         {
             return WorkState.Focused;
         }
@@ -39,23 +41,33 @@ public sealed class WorkStateEvaluator
         return WorkState.Light;
     }
 
-    private static bool IsSustainedKeyboardActivity(ActivitySnapshot snapshot)
+    private static bool HasStrongKeyboardOutput(ActivitySnapshot snapshot)
     {
-        if (snapshot.SampleDuration <= TimeSpan.Zero)
-        {
-            return snapshot.KeyboardInputs >= 120;
-        }
-
-        return snapshot.KeyboardInputs / snapshot.SampleDuration.TotalMinutes >= 40;
+        return KeyboardInputsPerMinute(snapshot) >= 40;
     }
 
-    private static bool IsLowMouseTravel(ActivitySnapshot snapshot)
+    private static bool HasLowKeyboardOutput(ActivitySnapshot snapshot)
+    {
+        return KeyboardInputsPerMinute(snapshot) <= 6;
+    }
+
+    private static bool IsSwitchingWithoutOutput(ActivitySnapshot snapshot)
+    {
+        return snapshot.WindowSwitches >= 5 && HasLowKeyboardOutput(snapshot);
+    }
+
+    private static bool HasMouseActivity(ActivitySnapshot snapshot)
+    {
+        return snapshot.MouseTravel >= 120;
+    }
+
+    private static double KeyboardInputsPerMinute(ActivitySnapshot snapshot)
     {
         if (snapshot.SampleDuration <= TimeSpan.Zero)
         {
-            return snapshot.MouseTravel <= 250;
+            return snapshot.KeyboardInputs;
         }
 
-        return snapshot.MouseTravel / snapshot.SampleDuration.TotalMinutes <= 80;
+        return snapshot.KeyboardInputs / snapshot.SampleDuration.TotalMinutes;
     }
 }

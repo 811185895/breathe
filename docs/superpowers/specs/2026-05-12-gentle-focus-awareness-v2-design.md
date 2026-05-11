@@ -40,25 +40,23 @@ Add three small units rather than putting the behavior directly in `MainWindow`:
 
 ## Detection Rules
 
-Initial thresholds should be conservative and easy to tune:
+Initial thresholds should be compact and easy to tune:
 
 - `Light`
-  - Same foreground window dwell is less than 20 minutes, or
-  - The user switches windows regularly, or
+  - Same foreground window dwell is less than 7.5 minutes, or
+  - The user has sustained keyboard output, even if they have stayed in one window for a long time, or
   - The user has been inactive long enough that the session should be considered broken.
 
 - `Focused`
-  - Same foreground window dwell is 20 to 45 minutes, and
-  - There is continued keyboard or mouse activity, and
-  - Window switching is low.
+  - Same foreground window dwell is 7.5 to 15 minutes, and
+  - Keyboard output is low, and
+  - There is still some mouse activity, suggesting the user is present but mostly looking, clicking, or thinking.
 
 - `DeepFocus`
-  - Same foreground window dwell exceeds 45 minutes, and
-  - Keyboard input is sustained or repetitive, and
-  - Window switching is very low, and
-  - Mouse movement is low, narrow, or repetitive enough to suggest the user may be stuck in one problem space.
+  - Same foreground window dwell exceeds 15 minutes, and keyboard output is low, or
+  - The user switches windows frequently while producing little or no keyboard output.
 
-These states are intentionally framed as "possible prolonged focus", not as a judgment about the user's mental state.
+These states are intentionally framed as "possible prolonged mental drift", not as a judgment about the user's mental state. Keyboard input is treated as a sign of output and agency, so it reduces reminder intensity rather than increasing it.
 
 ## Reminder Behavior
 
