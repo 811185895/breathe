@@ -9,7 +9,12 @@ var tests = new (string Name, Action Run)[]
     ("Adaptive tone uses cool fog on bright backgrounds", AdaptiveToneUsesCoolFogOnBrightBackgrounds),
     ("Adaptive tone follows colorful backgrounds with low saturation", AdaptiveToneFollowsColorfulBackgroundsWithLowSaturation),
     ("Adaptive tone stays visible on white backgrounds", AdaptiveToneStaysVisibleOnWhiteBackgrounds),
-    ("Screen anchor resolves golden lower point", ScreenAnchorResolvesGoldenLowerPoint)
+    ("Screen anchor resolves golden lower point", ScreenAnchorResolvesGoldenLowerPoint),
+    ("Evaluator keeps short dwell in light state", EvaluatorKeepsShortDwellLight),
+    ("Evaluator promotes sustained activity to focused state", EvaluatorPromotesSustainedActivityToFocused),
+    ("Evaluator promotes long low-switch work to deep focus", EvaluatorPromotesLongLowSwitchWorkToDeepFocus),
+    ("Prompt policy waits for sustained deep focus", PromptPolicyWaitsForSustainedDeepFocus),
+    ("Prompt policy suppresses repeated prompt during cooldown", PromptPolicySuppressesRepeatedPromptDuringCooldown)
 };
 
 var failures = 0;
@@ -122,6 +127,92 @@ static void ScreenAnchorResolvesGoldenLowerPoint()
 
     AssertClose(960, anchor.X, 0.0001, "golden lower x");
     AssertClose(668, anchor.Y, 1.0, "golden lower y");
+}
+
+static void EvaluatorKeepsShortDwellLight()
+{
+    var evaluator = new WorkStateEvaluator();
+    var snapshot = CreateSnapshot(
+        dwell: TimeSpan.FromMinutes(12),
+        keyboardInputs: 180,
+        mouseTravel: 900,
+        windowSwitches: 0);
+
+    var state = evaluator.Evaluate(snapshot);
+
+    AssertEqual(WorkState.Light, state, "short dwell should stay light");
+}
+
+static void EvaluatorPromotesSustainedActivityToFocused()
+{
+    var evaluator = new WorkStateEvaluator();
+    var snapshot = CreateSnapshot(
+        dwell: TimeSpan.FromMinutes(28),
+        keyboardInputs: 260,
+        mouseTravel: 1200,
+        windowSwitches: 1);
+
+    var state = evaluator.Evaluate(snapshot);
+
+    AssertEqual(WorkState.Focused, state, "sustained dwell with input should be focused");
+}
+
+static void EvaluatorPromotesLongLowSwitchWorkToDeepFocus()
+{
+    var evaluator = new WorkStateEvaluator();
+    var snapshot = CreateSnapshot(
+        dwell: TimeSpan.FromMinutes(52),
+        keyboardInputs: 520,
+        mouseTravel: 180,
+        windowSwitches: 0);
+
+    var state = evaluator.Evaluate(snapshot);
+
+    AssertEqual(WorkState.DeepFocus, state, "long low-switch work should be deep focus");
+}
+
+static void PromptPolicyWaitsForSustainedDeepFocus()
+{
+    var policy = new GentlePromptPolicy();
+    var window = new WindowActivitySnapshot("devenv", "Editor", 42);
+    var enteredDeepFocusAt = DateTimeOffset.Parse("2026-05-12T10:00:00+08:00");
+
+    var early = policy.Evaluate(WorkState.DeepFocus, window, enteredDeepFocusAt, enteredDeepFocusAt.AddMinutes(1));
+    var ready = policy.Evaluate(WorkState.DeepFocus, window, enteredDeepFocusAt, enteredDeepFocusAt.AddMinutes(3));
+
+    AssertTrue(!early.ShouldShow, "prompt should wait before showing");
+    AssertTrue(ready.ShouldShow, "prompt should show after sustained deep focus");
+    AssertTrue(!string.IsNullOrWhiteSpace(ready.Text), "prompt should include copy");
+}
+
+static void PromptPolicySuppressesRepeatedPromptDuringCooldown()
+{
+    var policy = new GentlePromptPolicy();
+    var window = new WindowActivitySnapshot("devenv", "Editor", 42);
+    var enteredDeepFocusAt = DateTimeOffset.Parse("2026-05-12T10:00:00+08:00");
+
+    var first = policy.Evaluate(WorkState.DeepFocus, window, enteredDeepFocusAt, enteredDeepFocusAt.AddMinutes(3));
+    var repeated = policy.Evaluate(WorkState.DeepFocus, window, enteredDeepFocusAt, enteredDeepFocusAt.AddMinutes(10));
+
+    AssertTrue(first.ShouldShow, "first prompt should show");
+    AssertTrue(!repeated.ShouldShow, "repeated prompt should be suppressed during cooldown");
+}
+
+static ActivitySnapshot CreateSnapshot(
+    TimeSpan dwell,
+    int keyboardInputs,
+    double mouseTravel,
+    int windowSwitches)
+{
+    return new ActivitySnapshot(
+        Window: new WindowActivitySnapshot("devenv", "Editor", 42),
+        WindowDwell: dwell,
+        KeyboardInputs: keyboardInputs,
+        MouseTravel: mouseTravel,
+        WindowSwitches: windowSwitches,
+        IdleDuration: TimeSpan.FromSeconds(5),
+        SampleDuration: TimeSpan.FromMinutes(5),
+        IsAvailable: true);
 }
 
 static void AssertEqual<T>(T expected, T actual, string name)

@@ -36,5 +36,14 @@
                  Height="22"
                  Fill="#E2ECF8"
                  Opacity="0.35" />
+        <TextBlock x:Name="GentlePromptText"
+                   Width="460"
+                   Opacity="0"
+                   TextAlignment="Center"
+                   TextWrapping="Wrap"
+                   FontSize="18"
+                   FontWeight="Light"
+                   Foreground="#DDECF7"
+                   IsHitTestVisible="False" />
     </Canvas>
 </Window>

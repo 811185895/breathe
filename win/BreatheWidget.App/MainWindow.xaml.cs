@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace BreatheWidget.App;
@@ -17,10 +18,19 @@ public partial class MainWindow : Window, IDisposable
     private readonly Forms.Screen _screen;
     private readonly AmbientToneSelector _toneSelector = new();
     private readonly ScreenAmbientSampler _screenSampler = new();
+    private readonly ActivityMonitor _activityMonitor = new();
+    private readonly WorkStateMapper _stateMapper = new();
+    private readonly WorkStateEvaluator _stateEvaluator = new();
+    private readonly GentlePromptPolicy _promptPolicy = new();
     private readonly DispatcherTimer _ambientTimer;
+    private readonly DispatcherTimer _awarenessTimer;
     private AmbientTone _tone = new AmbientToneSelector().Select(new AmbientColorSample(18, 22, 28));
+    private BreathProfile _activeProfile = BreathProfile.Default;
     private BreathSampler _sampler = new(BreathProfile.Default);
     private ScreenAnchor _anchor = ScreenAnchor.GoldenLower;
+    private WorkState _currentState = WorkState.Light;
+    private DateTimeOffset? _enteredDeepFocusAt;
+    private bool _useSubtleMode;
 
     public MainWindow()
         : this(Forms.Screen.PrimaryScreen ?? Forms.Screen.AllScreens[0])
@@ -40,6 +50,12 @@ public partial class MainWindow : Window, IDisposable
             Interval = TimeSpan.FromMilliseconds(900)
         };
         _ambientTimer.Tick += HandleAmbientTick;
+
+        _awarenessTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(3)
+        };
+        _awarenessTimer.Tick += HandleAwarenessTick;
     }
 
     protected override void OnClosed(EventArgs e)
@@ -53,6 +69,9 @@ public partial class MainWindow : Window, IDisposable
     {
         _ambientTimer.Stop();
         _ambientTimer.Tick -= HandleAmbientTick;
+        _awarenessTimer.Stop();
+        _awarenessTimer.Tick -= HandleAwarenessTick;
+        _activityMonitor.Dispose();
         _screenSampler.Dispose();
     }
 
@@ -67,6 +86,7 @@ public partial class MainWindow : Window, IDisposable
         PositionBreathVisual();
         ApplyTone(_tone);
         _ambientTimer.Start();
+        _awarenessTimer.Start();
     }
 
     private void HandleSourceInitialized(object? sender, EventArgs e)
@@ -108,12 +128,14 @@ public partial class MainWindow : Window, IDisposable
 
     public void UseVisibleMode()
     {
-        _sampler = new BreathSampler(BreathProfile.Default);
+        _useSubtleMode = false;
+        ApplyWorkState(_currentState);
     }
 
     public void UseSubtleMode()
     {
-        _sampler = new BreathSampler(BreathProfile.Subtle);
+        _useSubtleMode = true;
+        ApplyWorkState(_currentState);
     }
 
     public void UseAnchor(ScreenAnchor anchor)
@@ -125,11 +147,69 @@ public partial class MainWindow : Window, IDisposable
 
     private double MapOpacity(double sampledOpacity)
     {
-        var profile = BreathProfile.Default;
+        var profile = _activeProfile;
         var amount = (sampledOpacity - profile.MinOpacity) / (profile.MaxOpacity - profile.MinOpacity);
         amount = Math.Clamp(amount, 0, 1);
 
         return _tone.MinOpacity + ((_tone.MaxOpacity - _tone.MinOpacity) * amount);
+    }
+
+    private void HandleAwarenessTick(object? sender, EventArgs e)
+    {
+        var now = DateTimeOffset.Now;
+        var snapshot = _activityMonitor.Sample(now);
+        var state = _stateEvaluator.Evaluate(snapshot);
+
+        ApplyWorkState(state);
+
+        var prompt = _promptPolicy.Evaluate(state, snapshot.Window, _enteredDeepFocusAt, now);
+        if (prompt.ShouldShow)
+        {
+            ShowPrompt(prompt.Text);
+        }
+    }
+
+    private void ApplyWorkState(WorkState state)
+    {
+        if (_currentState != state)
+        {
+            _currentState = state;
+            _enteredDeepFocusAt = state == WorkState.DeepFocus ? DateTimeOffset.Now : null;
+        }
+
+        var nextProfile = ResolveProfile(state);
+        if (nextProfile == _activeProfile)
+        {
+            return;
+        }
+
+        _activeProfile = nextProfile;
+        _sampler = new BreathSampler(_activeProfile);
+    }
+
+    private BreathProfile ResolveProfile(WorkState state)
+    {
+        if (state == WorkState.Light && _useSubtleMode)
+        {
+            return BreathProfile.Subtle;
+        }
+
+        return _stateMapper.GetProfile(state);
+    }
+
+    private void ShowPrompt(string text)
+    {
+        GentlePromptText.Text = text;
+        GentlePromptText.BeginAnimation(OpacityProperty, null);
+        GentlePromptText.Opacity = 0;
+
+        var animation = new DoubleAnimationUsingKeyFrames();
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.82, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(1.4))));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.82, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(9))));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(11))));
+
+        GentlePromptText.BeginAnimation(OpacityProperty, animation);
     }
 
     private void ApplyTone(AmbientTone tone)
@@ -207,6 +287,8 @@ public partial class MainWindow : Window, IDisposable
         Canvas.SetTop(BreathHalo, top);
         Canvas.SetLeft(BreathDot, left + ((BreathHalo.Width - BreathDot.Width) / 2));
         Canvas.SetTop(BreathDot, top + ((BreathHalo.Height - BreathDot.Height) / 2));
+        Canvas.SetLeft(GentlePromptText, Math.Clamp(point.X - (GentlePromptText.Width / 2), margin, Width - GentlePromptText.Width - margin));
+        Canvas.SetTop(GentlePromptText, Math.Clamp(top + BreathHalo.Height + 12, margin, Height - 96));
     }
 
     private const int GwlExStyle = -20;
