@@ -1,4 +1,5 @@
 using BreatheWidget.Core;
+using Forms = System.Windows.Forms;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -11,7 +12,9 @@ namespace BreatheWidget.App;
 
 public partial class MainWindow : Window, IDisposable
 {
-    private readonly Stopwatch _clock = Stopwatch.StartNew();
+    private static readonly Stopwatch SyncClock = Stopwatch.StartNew();
+
+    private readonly Forms.Screen _screen;
     private readonly AmbientToneSelector _toneSelector = new();
     private readonly ScreenAmbientSampler _screenSampler = new();
     private readonly DispatcherTimer _ambientTimer;
@@ -20,7 +23,13 @@ public partial class MainWindow : Window, IDisposable
     private ScreenAnchor _anchor = ScreenAnchor.GoldenLower;
 
     public MainWindow()
+        : this(Forms.Screen.PrimaryScreen ?? Forms.Screen.AllScreens[0])
     {
+    }
+
+    public MainWindow(Forms.Screen screen)
+    {
+        _screen = screen;
         InitializeComponent();
         Loaded += HandleLoaded;
         SourceInitialized += HandleSourceInitialized;
@@ -49,10 +58,11 @@ public partial class MainWindow : Window, IDisposable
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        Left = SystemParameters.VirtualScreenLeft;
-        Top = SystemParameters.VirtualScreenTop;
-        Width = SystemParameters.VirtualScreenWidth;
-        Height = SystemParameters.VirtualScreenHeight;
+        var (l, t, w, h) = ScreenMetrics.BoundsToDIP(_screen.Bounds);
+        Left = l;
+        Top = t;
+        Width = w;
+        Height = h;
 
         PositionBreathVisual();
         ApplyTone(_tone);
@@ -72,7 +82,7 @@ public partial class MainWindow : Window, IDisposable
 
     private void HandleRendering(object? sender, EventArgs e)
     {
-        var sample = _sampler.Sample(_clock.Elapsed);
+        var sample = _sampler.Sample(SyncClock.Elapsed);
 
         HaloScale.ScaleX = sample.Scale;
         HaloScale.ScaleY = sample.Scale;
@@ -82,14 +92,15 @@ public partial class MainWindow : Window, IDisposable
 
     private void HandleAmbientTick(object? sender, EventArgs e)
     {
-        var centerX = Left + Canvas.GetLeft(BreathHalo) + (BreathHalo.Width / 2);
-        var centerY = Top + Canvas.GetTop(BreathHalo) + (BreathHalo.Height / 2);
-        var offset = (BreathHalo.Width / 2) + 32;
+        var center = GetHaloCenterInDevicePixels();
+        var dipOffset = (BreathHalo.Width / 2) + 32;
+        var offsetX = DipLengthToDevicePixelsX(dipOffset);
+        var offsetY = DipLengthToDevicePixelsY(dipOffset);
         var sample = AverageSamples(
-            _screenSampler.Sample(centerX - offset, centerY),
-            _screenSampler.Sample(centerX + offset, centerY),
-            _screenSampler.Sample(centerX, centerY - offset),
-            _screenSampler.Sample(centerX, centerY + offset));
+            _screenSampler.Sample(center.X - offsetX, center.Y),
+            _screenSampler.Sample(center.X + offsetX, center.Y),
+            _screenSampler.Sample(center.X, center.Y - offsetY),
+            _screenSampler.Sample(center.X, center.Y + offsetY));
 
         _tone = _toneSelector.Select(sample);
         ApplyTone(_tone);
@@ -151,6 +162,38 @@ public partial class MainWindow : Window, IDisposable
             (byte)(red / samples.Length),
             (byte)(green / samples.Length),
             (byte)(blue / samples.Length));
+    }
+
+    private System.Windows.Point GetHaloCenterInDevicePixels()
+    {
+        var dipX = Left + Canvas.GetLeft(BreathHalo) + (BreathHalo.Width / 2);
+        var dipY = Top + Canvas.GetTop(BreathHalo) + (BreathHalo.Height / 2);
+        return TransformDipToDevice(new System.Windows.Point(dipX, dipY));
+    }
+
+    private double DipLengthToDevicePixelsX(double dipHorizontal)
+    {
+        var p0 = TransformDipToDevice(new System.Windows.Point(0, 0));
+        var p1 = TransformDipToDevice(new System.Windows.Point(dipHorizontal, 0));
+        return Math.Abs(p1.X - p0.X);
+    }
+
+    private double DipLengthToDevicePixelsY(double dipVertical)
+    {
+        var p0 = TransformDipToDevice(new System.Windows.Point(0, 0));
+        var p1 = TransformDipToDevice(new System.Windows.Point(0, dipVertical));
+        return Math.Abs(p1.Y - p0.Y);
+    }
+
+    private System.Windows.Point TransformDipToDevice(System.Windows.Point dipPoint)
+    {
+        var source = PresentationSource.FromVisual(this);
+        if (source?.CompositionTarget != null)
+        {
+            return source.CompositionTarget.TransformToDevice.Transform(dipPoint);
+        }
+
+        return dipPoint;
     }
 
     private void PositionBreathVisual()

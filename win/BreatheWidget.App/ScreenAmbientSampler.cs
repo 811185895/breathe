@@ -1,4 +1,5 @@
 using BreatheWidget.Core;
+using System.ComponentModel;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
@@ -18,11 +19,25 @@ internal sealed class ScreenAmbientSampler : IDisposable
     public AmbientColorSample Sample(double screenX, double screenY)
     {
         var bounds = Forms.SystemInformation.VirtualScreen;
-        var x = Clamp((int)Math.Round(screenX - (_sampleSize / 2.0)), bounds.Left, bounds.Right - _sampleSize);
-        var y = Clamp((int)Math.Round(screenY - (_sampleSize / 2.0)), bounds.Top, bounds.Bottom - _sampleSize);
+        var maxX = bounds.Right - _sampleSize;
+        var maxY = bounds.Bottom - _sampleSize;
+        if (maxX < bounds.Left || maxY < bounds.Top)
+        {
+            return FallbackSample;
+        }
 
-        using var graphics = Drawing.Graphics.FromImage(_bitmap);
-        graphics.CopyFromScreen(x, y, 0, 0, new Drawing.Size(_sampleSize, _sampleSize), Drawing.CopyPixelOperation.SourceCopy);
+        var x = Clamp((int)Math.Round(screenX - (_sampleSize / 2.0)), bounds.Left, maxX);
+        var y = Clamp((int)Math.Round(screenY - (_sampleSize / 2.0)), bounds.Top, maxY);
+
+        try
+        {
+            using var graphics = Drawing.Graphics.FromImage(_bitmap);
+            graphics.CopyFromScreen(x, y, 0, 0, new Drawing.Size(_sampleSize, _sampleSize), Drawing.CopyPixelOperation.SourceCopy);
+        }
+        catch (Win32Exception)
+        {
+            return FallbackSample;
+        }
 
         long red = 0;
         long green = 0;
@@ -47,6 +62,8 @@ internal sealed class ScreenAmbientSampler : IDisposable
             (byte)(green / count),
             (byte)(blue / count));
     }
+
+    private static AmbientColorSample FallbackSample => new(18, 22, 28);
 
     public void Dispose()
     {
