@@ -51,7 +51,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/BreatheWidget-${{ github.ref_name }}-win-x64-portable.zip
+          files: |
+            artifacts/BreatheWidget-${{ github.ref_name }}-win-x64-portable.zip
+            docs/breathing-demo.mp4
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
