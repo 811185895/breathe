@@ -82,13 +82,13 @@ dotnet run --project BreatheWidget.Tests\BreatheWidget.Tests.csproj
 
 下面内嵌视频主要展示桌面上的**呼吸渐变 / 氛围动画**实际效果。当前这一段录屏里**还没有**「文字提醒」相关效果（之后若单独做了文字类提示，会再补一版录屏说明）。
 
-GitHub 的 README 会过滤指向**仓库内相对路径**的 `<video>`，所以在页面上能直接播放的地址使用 **Releases 里的附件**（与便携 zip 同一批上传，文件名固定为 `breathing-demo.mp4`）：
+为了在 README 里能正常内嵌播放，演示片段需使用 GitHub 附件托管地址（在网页编辑 README 时通过 **Attach files** 上传后生成），与仓库中的源文件 [`docs/breathing-demo.mp4`](docs/breathing-demo.mp4) 为同一素材：
 
 <video controls width="100%">
-  <source src="https://github.com/811185895/breathe/releases/latest/download/breathing-demo.mp4" type="video/mp4">
+  <source src="https://github.com/user-attachments/assets/008f8819-ba92-4b60-8485-c6e6e6a003c9" type="video/mp4">
 </video>
 
-若内嵌播放器仍无法加载（例如企业网络拦截 `github.com` 下载域），可改用 [Releases 最新页](https://github.com/811185895/breathe/releases/latest) 手动下载 **`breathing-demo.mp4`**，或在仓库中查看源文件 [`docs/breathing-demo.mp4`](docs/breathing-demo.mp4)。
+若上方播放器无法加载，可从 [Releases 最新页](https://github.com/811185895/breathe/releases/latest) 下载 **`breathing-demo.mp4`**，或在仓库中打开源文件链接。
 
 ## 开源与公开仓库前的提醒
 
