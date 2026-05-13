@@ -2,7 +2,11 @@
 
 Windows ambient breathing reminder MVP.
 
-中文使用说明、本机需安装的 **.NET 8 SDK**、克隆与运行步骤、以及效果图路径，见仓库根目录 [`README.md`](../README.md)。
+中文使用说明、**免安装下载包（GitHub Releases）**、以及从源码运行所需的 **.NET 8 SDK**，见仓库根目录 [`README.md`](../README.md)。
+
+## Binary releases
+
+End users can download a **self-contained portable zip** (no separate .NET install) from the repository’s [**Releases**](https://github.com/811185895/breathe/releases/latest) page. Extract the archive and run **`BreatheWidget.App.exe`**.
 
 ## What It Does
 
