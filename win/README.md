@@ -8,9 +8,9 @@ Windows ambient breathing reminder MVP.
 
 End users can download a **self-contained portable zip** (no separate .NET install) from the repository’s [**Releases**](https://github.com/811185895/breathe/releases/latest) page. Extract the archive and run **`BreatheWidget.App.exe`**.
 
-## Demo media
+## Demo
 
-The root [`README.md`](../README.md) embeds screenshots and a short **screen recording** of the breathing overlay. The MP4 is shipped as a fixed-name release asset (`breathing-demo.mp4`, see **Releases → latest**) so GitHub’s README can render an inline player; **text-style reminder UI is not shown** in the current recording (a follow-up clip may be added later).
+Screenshots and a short screen recording: see the root [`README.md`](../README.md).
 
 ## What It Does
 

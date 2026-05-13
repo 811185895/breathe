@@ -80,13 +80,9 @@ dotnet run --project BreatheWidget.Tests\BreatheWidget.Tests.csproj
 
 ### 视频（呼吸动画）
 
-下面演示主要展示桌面上的**呼吸渐变 / 氛围动画**实际效果。当前这一段录屏里**还没有**「文字提醒」相关效果（之后若单独做了文字类提示，会再补一版录屏说明）。
-
-在 GitHub 的 README 里，**`<video>` 这类 HTML 会被直接过滤掉**，所以这里用「**单独一行**的附件链接」来显示与 Issue/PR 里相同的**视频卡片**（该链接来自在网页里 **Attach files** 上传 `docs/breathing-demo.mp4` 后生成，与仓库源文件为同一素材）。请滚到本段下方，看到 **breathing-demo.mp4** 卡片后点击即可播放：
+以下为桌面呼吸动画效果的简短录屏；录屏中尚未包含「文字提醒」等其它界面。
 
 https://github.com/user-attachments/assets/008f8819-ba92-4b60-8485-c6e6e6a003c9
-
-若没有出现卡片（缓存或网络拦截），请先 **Ctrl+F5 强制刷新**；仍不行可 [在新标签页打开同一 MP4](https://github.com/user-attachments/assets/008f8819-ba92-4b60-8485-c6e6e6a003c9)，或从 [Releases 最新页](https://github.com/811185895/breathe/releases/latest) 下载 **`breathing-demo.mp4`**，或打开源文件 [`docs/breathing-demo.mp4`](docs/breathing-demo.mp4)。
 
 ## 开源与公开仓库前的提醒
 
