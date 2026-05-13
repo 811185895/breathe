@@ -2,6 +2,8 @@
 
 Windows ambient breathing reminder MVP.
 
+中文使用说明、本机需安装的 **.NET 8 SDK**、克隆与运行步骤、以及效果图路径，见仓库根目录 [`README.md`](../README.md)。
+
 ## What It Does
 
 - Creates a transparent, always-on-top WPF overlay.
