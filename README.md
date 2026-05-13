@@ -80,15 +80,17 @@ dotnet run --project BreatheWidget.Tests\BreatheWidget.Tests.csproj
 
 ### 视频（呼吸动画）
 
-下面内嵌视频主要展示桌面上的**呼吸渐变 / 氛围动画**实际效果。当前这一段录屏里**还没有**「文字提醒」相关效果（之后若单独做了文字类提示，会再补一版录屏说明）。
+下面演示主要展示桌面上的**呼吸渐变 / 氛围动画**实际效果。当前这一段录屏里**还没有**「文字提醒」相关效果（之后若单独做了文字类提示，会再补一版录屏说明）。
 
-为了在 README 里能正常内嵌播放，演示片段需使用 GitHub 附件托管地址（在网页编辑 README 时通过 **Attach files** 上传后生成），与仓库中的源文件 [`docs/breathing-demo.mp4`](docs/breathing-demo.mp4) 为同一素材：
+在 GitHub 的 README 里，**`<video>` 这类 HTML 往往会被直接过滤掉**，所以这里用「单独一行的附件链接」来触发和 Issue/PR 里一样的**内嵌播放器**（该链接来自在网页里 **Attach files** 上传 `docs/breathing-demo.mp4` 后生成，与仓库源文件为同一素材）：
 
-<video controls width="100%">
-  <source src="https://github.com/user-attachments/assets/008f8819-ba92-4b60-8485-c6e6e6a003c9" type="video/mp4">
-</video>
+https://github.com/user-attachments/assets/008f8819-ba92-4b60-8485-c6e6e6a003c9
 
-若上方播放器无法加载，可从 [Releases 最新页](https://github.com/811185895/breathe/releases/latest) 下载 **`breathing-demo.mp4`**，或在仓库中打开源文件链接。
+若上面没有出现播放器（个别浏览器或网络会拦截），可点击下面封面，在**新标签页**打开同一视频：
+
+[![点击播放：桌面呼吸动画演示](docs/使用效果/桌面效果.png)](https://github.com/user-attachments/assets/008f8819-ba92-4b60-8485-c6e6e6a003c9)
+
+也可从 [Releases 最新页](https://github.com/811185895/breathe/releases/latest) 下载 **`breathing-demo.mp4`**，或打开仓库里的源文件 [`docs/breathing-demo.mp4`](docs/breathing-demo.mp4)。
 
 ## 开源与公开仓库前的提醒
 
