@@ -70,11 +70,21 @@ dotnet build BreatheWidget.sln
 dotnet run --project BreatheWidget.Tests\BreatheWidget.Tests.csproj
 ```
 
-## 使用效果（截图）
+## 使用效果
+
+### 截图
 
 ![桌面效果](docs/使用效果/桌面效果.png)
 
 ![支持自定义位置和颜色](docs/使用效果/支持自定义位置和颜色.png)
+
+### 视频（呼吸动画）
+
+下面内嵌视频主要展示桌面上的**呼吸渐变 / 氛围动画**实际效果。当前这一段录屏里**还没有**「文字提醒」相关效果（之后若单独做了文字类提示，会再补一版录屏说明）。
+
+<video src="docs/使用效果/桌面呼吸.mp4" controls width="100%"></video>
+
+若页面未显示播放器，可在仓库中直接打开文件：[`docs/使用效果/桌面呼吸.mp4`](docs/使用效果/桌面呼吸.mp4)。
 
 ## 开源与公开仓库前的提醒
 
